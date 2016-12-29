@@ -50,14 +50,25 @@ AGC_SLOW=4
 $verbose=nil
 $ser_dev='/dev/cu.usbserial-A105HW5O'
 $ser_speed=38400
+$kx=0
 
 # -=-=-=-=-=-=-=- Command Line Processing -=-=-=-=-=-=-=- 
 
 # Get the various user options.
 opts=Trollop::options do
+  opt :kx, "Specify your radio. 2 for KX2 and 3 for KX3", :type => :string
   opt :dev, "Serial device", :type => :string
   opt :speed, "Serial speed (default 38400)", :type => :string
   opt :verbose, "Verbose"
+end
+
+# Check whether this is a KX2 or KX3 (it matters for certain
+# functions).
+if opts[:kx_given]
+  $kx=opts[:kx].to_i
+else
+  puts "--kx is mandatory"
+  exit
 end
 
 # If the user wants verbosity, give it to them.
@@ -257,12 +268,26 @@ end
 
 # Hit the STORE button.
 def store_button()
-  button_hold(14)
+  if $kx==2
+    button_hold(14)
+  elsif $kx==3
+    button_hold(41)
+  else
+    return(nil)
+  end
+  return(true)
 end
 
 # Hit the ATU button.
 def atu_button()
-  button_tap(20)
+  if $kx==2
+    button_tap(20)
+  elsif $kx==3
+    button_tap(44)
+  else
+    return(nil)
+  end
+  return(true)
 end
 
 # -=-=-=-=-=-=-=- Main Program -=-=-=-=-=-=-=- 

@@ -89,7 +89,7 @@ Emulate a tap of the specified button (specified as a number). Returns true or n
 Emulate a hold of the specified button (specified as a number). Returns true or nil. Note that button numbers are different on the KX2 and KX3.
 
 ## store_button()
-Emulate use of the STORE button. Note that this only works on the KX2. Until I figure out a way to automatically distinguish between a KX2 and KX3 via the serial API, this is going to be a problem.
+Emulate use of the STORE button.
 
 ## atu_button()
-Emulate use of the ATU button. Note that this only works on the KX2. Until I figure out a way to automatically distinguish between a KX2 and KX3 via the serial API, this is going to be a problem.
+Emulate use of the ATU button.
