@@ -1,5 +1,5 @@
 # kx-util
-A tool for manipulating the KX2 (and potentially KX3) from the command line via the serial interface.
+A tool for manipulating the KX2 and KX3 from the command line via the serial interface.
 
 A brief note before we start:  This code is in development. Do not expect it work well (or even necessarily work at all) until this notice goes away. You're welcome to experiment, but no results are guaranteed in any way at this point.
 
