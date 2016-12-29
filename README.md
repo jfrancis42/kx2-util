@@ -17,10 +17,10 @@ You'll need two extra gems to run this code: trollop and rubyserial. On Linux an
 sudo gem install trollop rubyserial
 ````
 
-There are two flags required. --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
+There are four possible flags, with one of them mandatory. --kx is mandatory, and specifies which radio you have (2 for KX2 and 3 for KX3). --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
 
 ````
-jfrancis@hoss ~ $ ./kx2-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400
+jfrancis@hoss ~ $ ./kx2-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400 --kx 2
 Opening serial port...
 listener() thread starting.
 Sending commands...
