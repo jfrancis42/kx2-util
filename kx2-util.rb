@@ -42,6 +42,9 @@ BAND_12M=8
 BAND_10M=9
 BAND_6M=10
 
+AGC_FAST=2
+AGC_SLOW=4
+
 # -=-=-=-=-=-=-=- Defaults -=-=-=-=-=-=-=- 
 
 $verbose=nil
@@ -169,6 +172,19 @@ def set_channel(channel)
   end
 end
 
+# Set the AGC speed. Returns the speed.
+def set_agc(agc)
+  puts "Setting AGC to #{agc}" if $verbose
+  a='GT'+(('000'+agc.to_s)[-3..-1])+';'
+  puts a if $verbose
+  ret=send_cmd(a,'GT;',a,0.5,1.5,3)
+  if(ret)
+    return(ret.gsub(/^GT/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
 # Change VFO-A to the specified band. Returns the band number.
 def set_band(band)
   puts "Setting band to #{band}" if $verbose
@@ -224,7 +240,7 @@ def set_mode(mode)
 end
 
 # Tap a button.
-def tap(button)
+def button_tap(button)
   puts "Pressing button #{button}" if $verbose
   b='SWT'+button.to_s+';'
   puts b if $verbose
@@ -232,7 +248,7 @@ def tap(button)
 end
 
 # Hold a button.
-def hold(button)
+def button_hold(button)
   puts "Holding button #{button}" if $verbose
   b='SWH'+button.to_s+';'
   puts b if $verbose
@@ -240,8 +256,13 @@ def hold(button)
 end
 
 # Hit the STORE button.
-def store()
-  hold(14)
+def store_button()
+  button_hold(14)
+end
+
+# Hit the ATU button.
+def atu_button()
+  button_tap(20)
 end
 
 # -=-=-=-=-=-=-=- Main Program -=-=-=-=-=-=-=- 
@@ -260,9 +281,10 @@ puts "Sending commands..."
 puts "channel: #{set_channel(3)}"
 puts "mode: #{set_mode(MODE_USB)}"
 puts "freq: #{set_frequency(14347000)}"
+puts "agc: #{set_agc(AGC_SLOW)}"
 puts "bw: #{set_bandwidth(2200)}"
-puts "store: #{store()}"
-puts "store: #{store()}"
+puts "store: #{store_button()}"
+puts "store: #{store_button()}"
 #puts "band: #{set_band(BAND_80M)}"
 
 # Tell the thread(s) to shut down.
