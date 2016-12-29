@@ -1,4 +1,4 @@
-# kx2-util
+# kx-util
 A tool for manipulating the KX2 (and potentially KX3) from the command line via the serial interface.
 
 A brief note before we start:  This code is in development. Do not expect it work well (or even necessarily work at all) until this notice goes away. You're welcome to experiment, but no results are guaranteed in any way at this point.
@@ -20,7 +20,7 @@ sudo gem install trollop rubyserial
 There are three possible flags. --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
 
 ````
-jfrancis@hoss ~ $ ./kx2-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400 --kx 2
+jfrancis@hoss ~ $ ./kx-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400 --kx 2
 Opening serial port...
 listener() thread starting.
 Sending commands...
