@@ -17,7 +17,7 @@ You'll need two extra gems to run this code: trollop and rubyserial. On Linux an
 sudo gem install trollop rubyserial
 ````
 
-There are four possible flags, with one of them mandatory. --kx is mandatory, and specifies which radio you have (2 for KX2 and 3 for KX3). --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
+There are three possible flags. --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
 
 ````
 jfrancis@hoss ~ $ ./kx2-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400 --kx 2
@@ -64,6 +64,9 @@ This is not a user-called function. Rather, it's a thread that constantly runs i
 ## send_cmd()
 This is not a user-called function. It is used by the functions below to send serial commands to the radio, then attempts to validate that they were successful. It is called with a command to be run, a command to check that the first command was successful, a string to compare with the result to determine success, a time to sleep between running the command and the validation (which sometimes need to be longer than usual, for example when changing bands), a maximum amount of time to wait for a result, and a number of tries before returning failure. For commands that cannot be checked (such as button presses), nil can be passed as the second argument. This function returns the result of the result of the validation string (or true, in the case of a nil validation function) if successful, or nil if it times out or otherwise fails.
 
+## get_cmd()
+This is a simpler version of send_cmd() designed mostly for doing GET functions on the serial API. It takes the same parameters as send_cmd(), except no validating function or test value. Returns the string provided by the serial API.
+
 ## set_channel()
 This function changes the radio to the specified channel (0 to 99). If the specified channel has not been configured, then it sets the channel to be written to if the store_button() function is called. Returns the new channel value.
 
@@ -93,3 +96,9 @@ Emulate use of the STORE button.
 
 ## atu_button()
 Emulate use of the ATU button.
+
+## detect_radio()
+Detects which model radio (KX2 or KX3) is attached, as well as what options are installed and configured. Sets various variables (all start with $kx_) as listed in the source.
+
+## show_radio_info()
+Shows what model radio is connected, as well as the installed and configured options.

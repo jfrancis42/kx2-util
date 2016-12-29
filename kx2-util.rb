@@ -50,25 +50,14 @@ AGC_SLOW=4
 $verbose=nil
 $ser_dev='/dev/cu.usbserial-A105HW5O'
 $ser_speed=38400
-$kx=0
 
 # -=-=-=-=-=-=-=- Command Line Processing -=-=-=-=-=-=-=- 
 
 # Get the various user options.
 opts=Trollop::options do
-  opt :kx, "Specify your radio. 2 for KX2 and 3 for KX3", :type => :string
   opt :dev, "Serial device", :type => :string
   opt :speed, "Serial speed (default 38400)", :type => :string
   opt :verbose, "Verbose"
-end
-
-# Check whether this is a KX2 or KX3 (it matters for certain
-# functions).
-if opts[:kx_given]
-  $kx=opts[:kx].to_i
-else
-  puts "--kx is mandatory"
-  exit
 end
 
 # If the user wants verbosity, give it to them.
@@ -93,6 +82,15 @@ $all_done=nil
 $serial_port=Mutex.new()
 $queue=Mutex.new()
 $rx_messages=Queue.new()
+
+$kx_model=nil
+$kx_atu=nil
+$kx_pa=nil
+$kx_filter=nil
+$kx_extatu=nil
+$kx_charger=nil
+$kx_transverter=nil
+$kx_rtcio=nil
 
 # -=-=-=-=-=-=-=- Functions -=-=-=-=-=-=-=- 
 
@@ -130,10 +128,14 @@ end
 # nil). 'timeout' is the number of seconds to wait for a valid result
 # before failing.
 def send_cmd(command,check_command,check_value,sleep_time,timeout,tries)
+  msg=''
   ret=tries
   success=nil
   if(not(ret))
     ret=1
+  end
+  $queue.synchronize do
+    $rx_messages.clear()
   end
   while(ret>0 and (not(success)))
     ret=ret-1
@@ -164,6 +166,78 @@ def send_cmd(command,check_command,check_value,sleep_time,timeout,tries)
   end
   if(success)
     return(msg)
+  else
+    return(nil)
+  end
+end
+
+# A simpler version of send_cmd() mostly used for doing a GET.
+def get_cmd(command,sleep_time,timeout,tries)
+  msg=''
+  ret=tries
+  success=nil
+  if(not(ret))
+    ret=1
+  end
+  $queue.synchronize do
+    $rx_messages.clear()
+  end
+  while(ret>0 and (not(success)))
+    ret=ret-1
+    $serial_port.synchronize do
+      $serialport.write(command)
+    end
+    now=Time.now().to_f
+    while((not(success)) and Time.now().to_f-now<=timeout)
+      $queue.synchronize do
+        if($rx_messages.length>0)
+          msg=$rx_messages.pop()
+          success=true
+        end
+      end
+      sleep(0.1)
+    end
+  end
+  if(success)
+    sleep(sleep_time)
+    return(msg)
+  else
+    return(nil)
+  end
+end
+
+# Detects the model of radio.
+def detect_radio()
+  ret=get_cmd('OM;',0.1,1.0,5)
+  if(ret)
+    if(ret.include?('A'))
+      $kx_atu=true
+    end
+    if(ret.include?('P'))
+      $kx_pa=true
+    end
+    if(ret.include?('F'))
+      $kx_filter=true
+    end
+    if(ret.include?('T'))
+      $kx_extatu=true
+    end
+    if(ret.include?('B'))
+      $kx_charger=true
+    end
+    if(ret.include?('X'))
+      $kx_transverter=true
+    end
+    if(ret.include?('I'))
+      $kx_rtcio=true
+    end
+    if(ret=~/01;$/)
+      $kx_model=2
+    end
+    if(ret=~/02;$/)
+      $kx_model=3
+    end
+    return(true)
   else
     return(nil)
   end
@@ -268,9 +342,9 @@ end
 
 # Hit the STORE button.
 def store_button()
-  if $kx==2
+  if $kx_model==2
     button_hold(14)
-  elsif $kx==3
+  elsif $kx_model==3
     button_hold(41)
   else
     return(nil)
@@ -280,14 +354,47 @@ end
 
 # Hit the ATU button.
 def atu_button()
-  if $kx==2
+  if $kx_model==2
     button_tap(20)
-  elsif $kx==3
+  elsif $kx_model==3
     button_tap(44)
   else
     return(nil)
   end
   return(true)
+end
+
+# Display what is known about the attached radio.
+def show_radio_info()
+  if $kx_model==2
+    puts "KX2 Detected"
+  elsif $kx_model==3
+    puts "KX3 Detected"
+  else
+    puts "Unsupported radio model."
+    $all_done=true
+  end
+  if $kx_atu
+    puts "KXAT2/KXAT3 Internal ATU Detected"
+  end
+  if $kx_pa
+    puts "KXPA100 External PA Detected"
+  end
+  if $kx_filter
+    puts "KXFL3 Roofing Filter Detected"
+  end
+  if $kx_extatu
+    puts "KXAT100 External ATU Detected"
+  end
+  if $kx_charger
+    puts "XKBC3 Charger/RTC Detected"
+  end
+  if $kx_transverter
+    puts "KX3-2M/KX3-4M Transverter Detected"
+  end
+  if $kx_rtcio
+    puts "KXIO2 RTC I/O Module Detected"
+  end
 end
 
 # -=-=-=-=-=-=-=- Main Program -=-=-=-=-=-=-=- 
@@ -302,19 +409,24 @@ listen=Thread.new { listener() }
 listen.abort_on_exception=true
 sleep(1)
 
-puts "Sending commands..."
-puts "channel: #{set_channel(3)}"
-puts "mode: #{set_mode(MODE_USB)}"
-puts "freq: #{set_frequency(14347000)}"
-puts "agc: #{set_agc(AGC_SLOW)}"
-puts "bw: #{set_bandwidth(2200)}"
-puts "store: #{store_button()}"
-puts "store: #{store_button()}"
-#puts "band: #{set_band(BAND_80M)}"
+detect_radio()
+show_radio_info()
 
-# Tell the thread(s) to shut down.
-puts "Stopping thread(s)..."
-$all_done=true
+if (not($all_done))
+  puts "Sending commands..."
+  puts "channel: #{set_channel(3)}"
+  puts "mode: #{set_mode(MODE_USB)}"
+  puts "freq: #{set_frequency(14347000)}"
+  puts "agc: #{set_agc(AGC_SLOW)}"
+  puts "bw: #{set_bandwidth(2200)}"
+  puts "store: #{store_button()}"
+  puts "store: #{store_button()}"
+  #puts "band: #{set_band(BAND_80M)}"
+  
+  # Tell the thread(s) to shut down.
+  puts "Stopping thread(s)..."
+  $all_done=true
+end
 sleep(1)
 
 # Close the serial device.
