@@ -30,6 +30,18 @@ MODE_DATA=6
 MODE_CW_REV=7
 MODE_DATA_REV=8
 
+BAND_160M=0
+BAND_80M=1
+BAND_60M=2
+BAND_40M=3
+BAND_30M=4
+BAND_20M=5
+BAND_17M=6
+BAND_15M=7
+BAND_12M=8
+BAND_10M=9
+BAND_6M=10
+
 # -=-=-=-=-=-=-=- Defaults -=-=-=-=-=-=-=- 
 
 $verbose=nil
@@ -157,6 +169,19 @@ def set_channel(channel)
   end
 end
 
+# Change VFO-A to the specified band. Returns the band number.
+def set_band(band)
+  puts "Setting band to #{band}" if $verbose
+  b='BN'+(('00'+band.to_s)[-2..-1])+';'
+  puts b if $verbose
+  ret=send_cmd(b,'BN;',b,0.5,1.5,3)
+  if(ret)
+    return(ret.gsub(/^BN/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
 # Set the filter bandwidth to a specified number of hertz (note, not
 # tens of hertz like the raw API).
 def set_bandwidth(hertz)
@@ -236,8 +261,9 @@ puts "channel: #{set_channel(3)}"
 puts "mode: #{set_mode(MODE_USB)}"
 puts "freq: #{set_frequency(14347000)}"
 puts "bw: #{set_bandwidth(2200)}"
-puts "store: #{store}"
-puts "store: #{store}"
+puts "store: #{store()}"
+puts "store: #{store()}"
+#puts "band: #{set_band(BAND_80M)}"
 
 # Tell the thread(s) to shut down.
 puts "Stopping thread(s)..."
