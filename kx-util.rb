@@ -45,6 +45,11 @@ BAND_6M=10
 AGC_FAST=2
 AGC_SLOW=4
 
+DATA_A=0
+DATA_AFSK_A=1
+DATA_FSK_D=2
+DATA_PSK_D=3
+
 # -=-=-=-=-=-=-=- Defaults -=-=-=-=-=-=-=- 
 
 $verbose=nil
@@ -265,6 +270,19 @@ def set_agc(agc)
   ret=send_cmd(a,'GT;',a,0.5,1.5,3)
   if(ret)
     return(ret.gsub(/^GT/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
+# Set the data mode. Returns the mode.
+def set_data_mode(data)
+  puts "Setting Data Mode to #{data}" if $verbose
+  d='DT'+(('000'+data.to_s)[-3..-1])+';'
+  puts d if $verbose
+  ret=send_cmd(d,'DT;',d,0.25,1.0,3)
+  if(ret)
+    return(ret.gsub(/^DT/,'').gsub(/;$/,'').to_i)
   else
     return(nil)
   end

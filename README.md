@@ -85,6 +85,9 @@ Set VFO-A to the frequency specified in Hz. Returns the new freqency in Hz. Note
 ## set_mode()
 Set VFO-A to the specified mode. Constants have been defined for MODE_LSB, MODE_USB, MODE_CW, MODE_FM, MODE_AM, MODE_DATA, MODE_CW_REV, MODE_DATA_REV. Returns the new mode.
 
+## set_data_mode()
+Sets the data mode once the mode has been set to MODE_DATA or MODE_DATA_REV. Constants have been defined for DATA_A, DATA_AFSK_A, DATA_FSK_D, and DATA_PSK_D. There is an omission in the Elecraft docs, and I've yet been unable to guess how to select between PSK31 and PSK63.
+
 ## button_tap()
 Emulate a tap of the specified button (specified as a number). Returns true or nil. Note that button numbers are different on the KX2 and KX3.
 
