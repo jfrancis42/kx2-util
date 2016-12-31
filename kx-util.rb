@@ -97,6 +97,24 @@ $kx_charger=nil
 $kx_transverter=nil
 $kx_rtcio=nil
 
+# This class holds the data for a single memory location.
+class Memory
+  attr_accessor :channel, :label, :description, :vfoa, :mode, :data_mode
+
+  def initialize(channel, label, description, vfoa, mode, data_mode)
+    @channel=channel.to_i
+    @label=label
+    @description=description
+    @vfoa=vfoa
+    @mode=mode
+    @data_mode=data_mode
+  end
+
+  def to_s
+    "Channel: #{channel}\nVFO-A: #{vfoa}\nMode: #{mode}\nData Mode: #{data_mode}"
+  end
+end
+
 # -=-=-=-=-=-=-=- Functions -=-=-=-=-=-=-=- 
 
 # Listener thread.
@@ -262,6 +280,11 @@ def set_channel(channel)
   end
 end
 
+# Return the current channel.
+def get_channel()
+  return(get_cmd('MC;',0.1,0.5,3).gsub(/^MC/,'').gsub(/;$/,'').to_i)
+end
+
 # Set the AGC speed. Returns the speed.
 def set_agc(agc)
   puts "Setting AGC to #{agc}" if $verbose
@@ -273,6 +296,11 @@ def set_agc(agc)
   else
     return(nil)
   end
+end
+
+# Return the current AGC setting.
+def get_agc()
+  return(get_cmd('GT;',0.1,0.5,3).gsub(/^GT/,'').gsub(/;$/,'').to_i)
 end
 
 # Set the data mode. Returns the mode.
@@ -288,6 +316,29 @@ def set_data_mode(data)
   end
 end
 
+# Return the current data mode.
+def get_data_mode()
+  return(get_cmd('DT;',0.1,0.5,3).gsub(/^DT/,'').gsub(/;$/,'').to_i)
+end
+
+# Set the output power. Returns the setting.
+def set_power(watts)
+  puts "Setting Watts to #{watts.to_i} watts" if $verbose
+  w='PC'+(('000'+watts.to_i.to_s)[-3..-1])+';'
+  puts w if $verbose
+  ret=send_cmd(w,'PC;',w,0.25,1.0,3)
+  if(ret)
+    return(ret.gsub(/^PC/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
+# Return the current power setting.
+def get_power()
+  return(get_cmd('PC;',0.1,0.5,3).gsub(/^PC/,'').gsub(/;$/,'').to_i)
+end
+
 # Change VFO-A to the specified band. Returns the band number.
 def set_band(band)
   puts "Setting band to #{band}" if $verbose
@@ -299,6 +350,11 @@ def set_band(band)
   else
     return(nil)
   end
+end
+
+# Return the current band.
+def get_band()
+  return(get_cmd('BN;',0.1,0.5,3).gsub(/^BN/,'').gsub(/;$/,'').to_i)
 end
 
 # Set the filter bandwidth to a specified number of hertz (note, not
@@ -315,6 +371,11 @@ def set_bandwidth(hertz)
   end
 end
 
+# Return the current filter bandwidth.
+def get_bandwidth()
+  return(get_cmd('BW;',0.1,0.5,3).gsub(/^BW/,'').gsub(/;$/,'').to_i)
+end
+
 # Set VFO-A to the specified integer frequency in hz (input not
 # checked).
 def set_frequency(hertz)
@@ -329,6 +390,11 @@ def set_frequency(hertz)
   end
 end
 
+# Return the current frequency of VFO-A.
+def get_frequency()
+  return(get_cmd('FA;',0.1,0.5,3).gsub(/^FA/,'').gsub(/;$/,'').to_i)
+end
+
 # Set the mode for VFO-A.
 def set_mode(mode)
   puts "Setting mode to #{mode}" if $verbose
@@ -340,6 +406,11 @@ def set_mode(mode)
   else
     return(nil)
   end
+end
+
+# Return the current mode.
+def get_mode()
+  return(get_cmd('MD;',0.1,0.5,3).gsub(/^MD/,'').gsub(/;$/,'').to_i)
 end
 
 # Tap a button.
@@ -370,11 +441,21 @@ def store_button()
   return(true)
 end
 
-# Hit the ATU button.
+# Writes the current info to the previously selected channel (you must
+# call set_channel() *PRIOR* to setting freq, mode, etc).
+def write_to_channel()
+  store_button()
+  sleep(0.5)
+  store_button()
+  sleep(0.5)
+end
+
+# Hit the ATU button. Automatically fails if no ATU was previously
+# detected by detect_radio().
 def atu_button()
-  if $kx_model==2
+  if $kx_model==2 and ($kx_atu or $kx_extatu)
     button_tap(20)
-  elsif $kx_model==3
+  elsif $kx_model==3 and ($kx_atu or $kx_extatu)
     button_tap(44)
   else
     return(nil)
@@ -432,14 +513,26 @@ show_radio_info()
 
 if (not($all_done))
   puts "Sending commands..."
-  puts "channel: #{set_channel(3)}"
-  puts "mode: #{set_mode(MODE_USB)}"
-  puts "freq: #{set_frequency(14347000)}"
-  puts "agc: #{set_agc(AGC_SLOW)}"
-  puts "bw: #{set_bandwidth(2200)}"
-  puts "store: #{store_button()}"
-  puts "store: #{store_button()}"
-  #puts "band: #{set_band(BAND_80M)}"
+
+#  puts "channel: #{set_channel(3)}"
+#  puts "mode: #{set_mode(MODE_USB)}"
+#  puts "freq: #{set_frequency(14347000)}"
+#  puts "agc: #{set_agc(AGC_SLOW)}"
+#  puts "bw: #{set_bandwidth(2200)}"
+#  puts "write: #{write_to_channel()}"
+
+#  #puts "band: #{set_band(BAND_80M)}"
+#  puts "freq: #{set_frequency(14070000)}"
+#  puts "mode: #{set_mode(MODE_USB)}"
+#  puts "bw: #{set_bandwidth(3000)}"
+#  puts "power: #{set_power(5)}"
+#  puts "atu: #{atu_button()}"
+
+  (0..9).each do |n|
+    puts "Getting data for channel: #{set_channel(n)}"
+    m=Memory.new(get_channel(),'','',get_frequency(),get_mode(),get_data_mode())
+    puts m
+  end
   
   # Tell the thread(s) to shut down.
   puts "Stopping thread(s)..."

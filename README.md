@@ -9,7 +9,9 @@ A secondary goal is to be able to manipulate other features of the radio, possib
 
 At this point, this code is still very much in the "testing and exploring" phase, but is being shared for anyone who would like to follow along and/or help.  Expect regular and radical changes as different approaches are tested.
 
-The code as it sits at the moment sets the radio to 14.347mhz, USB, slow AGC, with a 2.7khz filter, then programs this into memory 2 (note, if you don't want your memory 2 location overwritten, edit the code before you run it.)
+~~The code as it sits at the moment sets the radio to 14.347mhz, USB, slow AGC, with a 2.7khz filter, then programs this into memory 2 (note, if you don't want your memory 2 location overwritten, edit the code before you run it.)~~
+
+The current code dumps the important settings for the first ten memory locations (00-09) to the screen. It doesn't work correctly yet on unset memories, and there's still some bugs. But progress is being made.
 
 You'll need two extra gems to run this code: trollop and rubyserial. On Linux and Mac systems, this is accomplished with the following command:
 
@@ -70,23 +72,50 @@ This is a simpler version of send_cmd() designed mostly for doing GET functions 
 ## set_channel()
 This function changes the radio to the specified channel (0 to 99). If the specified channel has not been configured, then it sets the channel to be written to if the store_button() function is called. Returns the new channel value.
 
+## get_channel()
+Gets the current channel.
+
 ## set_agc()
 Set the AGC to the specified value. Constants have been defined for AGC_SLOW and AGC_FAST. Returns the new AGC value.
+
+## get_agc()
+Gets the current AGC value.
+
+## set_power()
+Set the output power to the specified integer number of watts. Yes, I know the KX2 and KX3 can set power to tenths of a watt, but the serial API doesn't allow for that. Sorry. Returns the new output power.
+
+## get_power()
+Gets the current power setting (rounded to an int due to API constraints).
 
 ## set_band()
 Set VFO-A to the specified band. Constants have been defined for BAND_160M, BAND_80M, etc. up through BAND_6M. BAND_6M does not work on the KX2, but should on the KX3. Returns the new band value. Note that this function will take a minimum of 500ms to complete.
 
+## get_band()
+Gets the current band.
+
 ## set_bandwidth()
 Set the filter bandwidth to a value specified in Hz. Returns the new filter bandwidth in Hz.
+
+## get_bandwidth()
+Gets the current filter bandwidth in hz.
 
 ## set_frequency()
 Set VFO-A to the frequency specified in Hz. Returns the new freqency in Hz. Note that this command will take a minimum of 500ms to complete.
 
+## get_frequency()
+Gets the current VFO-A frequency in hz.
+
 ## set_mode()
 Set VFO-A to the specified mode. Constants have been defined for MODE_LSB, MODE_USB, MODE_CW, MODE_FM, MODE_AM, MODE_DATA, MODE_CW_REV, MODE_DATA_REV. Returns the new mode.
 
+## get_mode()
+Gets the current mode.
+
 ## set_data_mode()
 Sets the data mode once the mode has been set to MODE_DATA or MODE_DATA_REV. Constants have been defined for DATA_A, DATA_AFSK_A, DATA_FSK_D, and DATA_PSK_D. There is an omission in the Elecraft docs, and I've yet been unable to guess how to select between PSK31 and PSK63.
+
+## get_data_mode()
+Gets the current data sub-mode (only valid if the current mode is a data mode).
 
 ## button_tap()
 Emulate a tap of the specified button (specified as a number). Returns true or nil. Note that button numbers are different on the KX2 and KX3.
@@ -95,13 +124,16 @@ Emulate a tap of the specified button (specified as a number). Returns true or n
 Emulate a hold of the specified button (specified as a number). Returns true or nil. Note that button numbers are different on the KX2 and KX3.
 
 ## store_button()
-Emulate use of the STORE button.
+Emulate pressing the STORE button.
 
 ## atu_button()
-Emulate use of the ATU button.
+Emulate pressing the ATU button.
 
 ## detect_radio()
 Detects which model radio (KX2 or KX3) is attached, as well as what options are installed and configured. Sets various variables (all start with $kx_) as listed in the source.
 
 ## show_radio_info()
 Shows what model radio is connected, as well as the installed and configured options.
+
+## write_to_channel()
+Writes the current settings to the previously selected memory location (note: you must select the channel using set_channel() before setting any values you wish to store in that channel).
