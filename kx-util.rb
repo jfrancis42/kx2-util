@@ -347,6 +347,24 @@ def get_volume()
   return(get_cmd('AG;',0.1,0.5,3).gsub(/^AG/,'').gsub(/;$/,'').to_i)
 end
 
+# Set the compression level.
+def set_compression(compression)
+  puts "Setting compression to #{compression}" if $verbose
+  c='CP'+(('000'+compression.to_s)[-3..-1])+';'
+  puts c if $verbose
+  ret=send_cmd(c,'CP;',c,0.5,1.5,3)
+  if(ret)
+    return(ret.gsub(/^CP/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
+# Get the current compression level.
+def get_compression()
+  return(get_cmd('CP;',0.1,0.5,3).gsub(/^CP/,'').gsub(/;$/,'').to_i)
+end
+
 # Set the AGC speed. Returns the speed.
 def set_agc(agc)
   puts "Setting AGC to #{agc}" if $verbose
@@ -621,6 +639,7 @@ if (not($all_done))
     puts "bw: #{get_bandwidth()} hz"
     puts "power: #{get_power()} watts"
     puts "volume: #{get_volume()}"
+    puts "compression: #{get_compression()}"
     puts "atu: #{get_atu()}"
   end
 

@@ -37,7 +37,9 @@ mode: LSB
 freq: 7158000 hz
 agc: Slow
 bw: 2700 hz
-power: 10 watts
+power: 5 watts
+volume: 6
+atu: L=6, C=60, R=antenna
 jfrancis@hoss ~ $
 ````
 
@@ -76,6 +78,12 @@ Set the volume (audio gain) level to the specified value.
 
 ## get_volume()
 Get the current volume (audio gain) value.
+
+## set_compression()
+Set the compression level to the specified value.
+
+## get_compression()
+Get the current compression value.
 
 ## get_atu()
 Get the current L, C, and relay values from the ATU (if present).
