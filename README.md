@@ -9,48 +9,35 @@ A secondary goal is to be able to manipulate other features of the radio, possib
 
 At this point, this code is still very much in the "testing and exploring" phase, but is being shared for anyone who would like to follow along and/or help.  Expect regular and radical changes as different approaches are tested.
 
-~~The code as it sits at the moment sets the radio to 14.347mhz, USB, slow AGC, with a 2.7khz filter, then programs this into memory 2 (note, if you don't want your memory 2 location overwritten, edit the code before you run it.)~~
-
-The current code dumps the important settings for the first ten memory locations (00-09) to the screen. It doesn't work correctly yet on unset memories, and there's still some bugs. But progress is being made.
-
 You'll need two extra gems to run this code: trollop and rubyserial. On Linux and Mac systems, this is accomplished with the following command:
 
 ````
 sudo gem install trollop rubyserial
 ````
+Command line options:
 
-There are three possible flags. --dev specifies the name of your serial device. --speed specifies the speed of the serial interface on your KX2/3. --dev defaults to '/dev/cu.usbserial-A105HW50', which is what my serial cable shows up as on my Mac. The --speed defaults to 38000. Additionally, there is a --verbose flag that spews a lot of extra information as the code runs. This is not normally used, but is useful while developing code. Once the supporting gems are installed, you can run the sample code:
+* --dev specifies the name of the serial device to use to communicate with your KX2/KX3. The code autodetects whether you're running on Linux or OSX, and makes a guess at a default if you don't specify this flag (/dev/ttyUSB0 for linux and /dev/cu.usbserial-A105HW50 for OSX). If the default is wrong, you will need to specify this flag.
+
+* --verbose spews a lot of debug info to the screen. Probably not useful for most users, but helpful for debugging.
+
+* --speed sets the serial speed to talk to your KX2/KX3. Defaults to 38400.
+
+* --radio shows the detected radio and installed options.
+*
+* --bargraph shows the current value of the bargraph (typically the S-meter reading). Takes five samples and returns the average.
+
+* --current shows the current radio settings.
 
 ````
-jfrancis@hoss ~ $ ./kx-util --verbose --dev /dev/cu.usbserial-A105HW5O --speed 38400 --kx 2
-Opening serial port...
-listener() thread starting.
-Sending commands...
-Setting channel to 3
-MC003;
-Adding to queue: MC003;
-channel: 3
-Setting mode to 2
-MD2;
-Adding to queue: MD2;
-mode: 2
-Setting frequency to 14277000
-FA00014277000;
-Adding to queue: FA00014277000;
-freq: 14277000
-Setting filter bandwidth to 1800
-BW0180;
-Adding to queue: BW0180;
-bw: 180
-Holding button 14
-SWH14;
-store: true
-Holding button 14
-SWH14;
-store: true
-Stopping thread(s)...
-listener() thread exiting.
-Closing serial port...
+jfrancis@hoss ~ $ ./kx-util.rb --radio --current
+KX2 Detected
+KXAT2/KXAT3 Internal ATU Detected
+
+mode: LSB
+freq: 7158000 hz
+agc: Slow
+bw: 2700 hz
+power: 10 watts
 jfrancis@hoss ~ $
 ````
 
@@ -81,6 +68,9 @@ Set the AGC to the specified value. Constants have been defined for AGC_SLOW and
 ## get_agc()
 Gets the current AGC value.
 
+## agc_to_string()
+Converts the value returned by get_agc() into a human-readable string.
+
 ## set_power()
 Set the output power to the specified integer number of watts. Yes, I know the KX2 and KX3 can set power to tenths of a watt, but the serial API doesn't allow for that. Sorry. Returns the new output power.
 
@@ -110,6 +100,9 @@ Set VFO-A to the specified mode. Constants have been defined for MODE_LSB, MODE_
 
 ## get_mode()
 Gets the current mode.
+
+## mode_to_string()
+Converts the value returned by get_mode() into a human-readable string.
 
 ## set_data_mode()
 Sets the data mode once the mode has been set to MODE_DATA or MODE_DATA_REV. Constants have been defined for DATA_A, DATA_AFSK_A, DATA_FSK_D, and DATA_PSK_D. There is an omission in the Elecraft docs, and I've yet been unable to guess how to select between PSK31 and PSK63.

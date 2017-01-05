@@ -53,8 +53,14 @@ DATA_PSK_D=3
 # -=-=-=-=-=-=-=- Defaults -=-=-=-=-=-=-=- 
 
 $verbose=nil
-$ser_dev='/dev/cu.usbserial-A105HW5O'
 $ser_speed=38400
+
+# Take a swag at some common serial defaults.
+if RUBY_PLATFORM=~/darwin/
+  $ser_dev='/dev/cu.usbserial-A105HW5O'
+elsif RUBY_PLATFORM=~/linux/
+  $ser_dev='/dev/ttyUSB0'
+end
 
 # -=-=-=-=-=-=-=- Command Line Processing -=-=-=-=-=-=-=- 
 
@@ -62,6 +68,9 @@ $ser_speed=38400
 opts=Trollop::options do
   opt :dev, "Serial device", :type => :string
   opt :speed, "Serial speed (default 38400)", :type => :string
+  opt :radio, "Show detected radio and options"
+  opt :bargraph, "Get the current bargraph (s-meter) reading"
+  opt :current, "Return the current radio settings"
   opt :verbose, "Verbose"
 end
 
@@ -119,7 +128,7 @@ end
 
 # Listener thread.
 def listener()
-  puts "listener() thread starting."
+  puts "listener() thread starting." if $verbose
   stuff=''
   while(not($all_done))
     $serial_port.synchronize do
@@ -138,7 +147,7 @@ def listener()
     end
     sleep(0.1)
   end
-  puts "listener() thread exiting."
+  puts "listener() thread exiting." if $verbose
 end
 
 # Send a command. 'command' is the command you want
@@ -266,6 +275,11 @@ def detect_radio()
   end
 end
 
+# Get the current bar graph reading.
+def get_bargraph()
+  return(get_cmd('BG;',0.1,0.5,3).gsub(/^BG/,'').gsub(/;$/,'').to_i)
+end
+
 # Change to a specified integer channel (0-99 for the KX2, but not
 # checked). Returns the channel.
 def set_channel(channel)
@@ -301,6 +315,17 @@ end
 # Return the current AGC setting.
 def get_agc()
   return(get_cmd('GT;',0.1,0.5,3).gsub(/^GT/,'').gsub(/;$/,'').to_i)
+end
+
+# Turn AGC setting into English.
+def agc_to_string(agc)
+  if agc==AGC_FAST
+    return("Fast")
+  elsif agc==AGC_SLOW
+    return("Slow")
+  else
+    return("Unknown")
+  end
 end
 
 # Set the data mode. Returns the mode.
@@ -373,7 +398,7 @@ end
 
 # Return the current filter bandwidth.
 def get_bandwidth()
-  return(get_cmd('BW;',0.1,0.5,3).gsub(/^BW/,'').gsub(/;$/,'').to_i)
+  return(get_cmd('BW;',0.1,0.5,3).gsub(/^BW/,'').gsub(/;$/,'').to_i*10)
 end
 
 # Set VFO-A to the specified integer frequency in hz (input not
@@ -411,6 +436,29 @@ end
 # Return the current mode.
 def get_mode()
   return(get_cmd('MD;',0.1,0.5,3).gsub(/^MD/,'').gsub(/;$/,'').to_i)
+end
+
+# Turn mode data into English.
+def mode_to_string(mode)
+  if mode==MODE_LSB
+    return("LSB")
+  elsif mode==MODE_USB
+    return("USB")
+  elsif mode==MODE_CW
+    return("CW")
+  elsif mode==MODE_FM
+    return("FM")
+  elsif mode==MODE_AM
+    return("AM")
+  elsif mode==MODE_DATA
+    return("DATA")
+  elsif mode==MODE_CW_REV
+    return("CW-REV")
+  elsif mode==MODE_DATA_REV
+    return("DATA-REV")
+  else
+    return("Unknown")
+  end
 end
 
 # Tap a button.
@@ -499,7 +547,7 @@ end
 # -=-=-=-=-=-=-=- Main Program -=-=-=-=-=-=-=- 
 
 # Open the serial device.
-puts "Opening serial port..."
+puts "Opening serial port..." if $verbose
 $serialport=Serial.new($ser_dev,$ser_speed)
 sleep(1)
 
@@ -508,38 +556,38 @@ listen=Thread.new { listener() }
 listen.abort_on_exception=true
 sleep(1)
 
+# Show the radio info, if requested.
 detect_radio()
-show_radio_info()
+if opts[:radio_given]
+  show_radio_info()
+  puts ""
+end
 
 if (not($all_done))
-  puts "Sending commands..."
+  puts "Ready to send commands."  if $verbose
 
-#  puts "channel: #{set_channel(3)}"
-#  puts "mode: #{set_mode(MODE_USB)}"
-#  puts "freq: #{set_frequency(14347000)}"
-#  puts "agc: #{set_agc(AGC_SLOW)}"
-#  puts "bw: #{set_bandwidth(2200)}"
-#  puts "write: #{write_to_channel()}"
+  if opts[:current_given]
+    puts "mode: #{mode_to_string(get_mode())}"
+    puts "freq: #{get_frequency()} hz"
+    puts "agc: #{agc_to_string(get_agc())}"
+    puts "bw: #{get_bandwidth()} hz"
+    puts "power: #{get_power()} watts"
+  end
 
-#  #puts "band: #{set_band(BAND_80M)}"
-#  puts "freq: #{set_frequency(14070000)}"
-#  puts "mode: #{set_mode(MODE_USB)}"
-#  puts "bw: #{set_bandwidth(3000)}"
-#  puts "power: #{set_power(5)}"
-#  puts "atu: #{atu_button()}"
-
-  (0..9).each do |n|
-    puts "Getting data for channel: #{set_channel(n)}"
-    m=Memory.new(get_channel(),'','',get_frequency(),get_mode(),get_data_mode())
-    puts m
+  if opts[:bargraph_given]
+    sum=0
+    (1..5).each do |n|
+      sum=sum+get_bargraph()
+    end
+    puts (sum/5).to_i
   end
   
   # Tell the thread(s) to shut down.
-  puts "Stopping thread(s)..."
+  puts "Stopping thread(s)..." if $verbose
   $all_done=true
 end
 sleep(1)
 
 # Close the serial device.
-puts "Closing serial port..."
+puts "Closing serial port..." if $verbose
 $serialport.close()
