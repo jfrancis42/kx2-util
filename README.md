@@ -71,6 +71,15 @@ Gets the current AGC value.
 ## agc_to_string()
 Converts the value returned by get_agc() into a human-readable string.
 
+## set_volume()
+Set the volume (audio gain) level to the specified value.
+
+## get_volume()
+Get the current volume (audio gain) value.
+
+## get_atu()
+Get the current L, C, and relay values from the ATU (if present).
+
 ## set_power()
 Set the output power to the specified integer number of watts. Yes, I know the KX2 and KX3 can set power to tenths of a watt, but the serial API doesn't allow for that. Sorry. Returns the new output power.
 

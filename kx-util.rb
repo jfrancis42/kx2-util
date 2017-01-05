@@ -281,6 +281,35 @@ def get_bargraph()
   return(get_cmd('BG;',0.1,0.5,3).gsub(/^BG/,'').gsub(/;$/,'').to_i)
 end
 
+# Get the current ATU L/C values. Per the docs, L and C can be
+# translated to specific inductance and capacitance values if you have
+# access to the tuner schematic. Which I don't.
+def get_atu()
+  if $kx_atu
+    atu=get_cmd('AK;',0.1,0.5,3).gsub(/^AK/,'').gsub(/;$/,'')
+    puts atu if $verbose
+    l=atu[0..1].to_i
+    c=atu[2..3].to_i
+    r=atu[4..5].to_i
+    puts l if $verbose
+    puts c if $verbose
+    puts r if $verbose
+    if r==0
+      puts "atu: antenna" if $verbose
+      relays="antenna"
+    elsif r==1
+      puts "atu: transmit" if $verbose
+      relays="transmit"
+    else
+      puts "atu: unknown" if $verbose
+      relays="Unknown"
+    end
+    return("L=#{l}, C=#{c}, R=#{relays}")
+  else
+    return "ATU not installed"
+  end
+end
+
 # Change to a specified integer channel (0-99 for the KX2, but not
 # checked). Returns the channel.
 def set_channel(channel)
@@ -298,6 +327,24 @@ end
 # Return the current channel.
 def get_channel()
   return(get_cmd('MC;',0.1,0.5,3).gsub(/^MC/,'').gsub(/;$/,'').to_i)
+end
+
+# Set the volume level.
+def set_volume(volume)
+  puts "Setting volume to #{volume}" if $verbose
+  v='AG'+(('000'+volume.to_s)[-3..-1])+';'
+  puts v if $verbose
+  ret=send_cmd(v,'AG;',v,0.5,1.5,3)
+  if(ret)
+    return(ret.gsub(/^AG/,'').gsub(/;$/,'').to_i)
+  else
+    return(nil)
+  end
+end
+
+# Get the current volume level.
+def get_volume()
+  return(get_cmd('AG;',0.1,0.5,3).gsub(/^AG/,'').gsub(/;$/,'').to_i)
 end
 
 # Set the AGC speed. Returns the speed.
@@ -573,6 +620,8 @@ if (not($all_done))
     puts "agc: #{agc_to_string(get_agc())}"
     puts "bw: #{get_bandwidth()} hz"
     puts "power: #{get_power()} watts"
+    puts "volume: #{get_volume()}"
+    puts "atu: #{get_atu()}"
   end
 
   if opts[:bargraph_given]
