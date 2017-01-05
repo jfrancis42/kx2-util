@@ -54,6 +54,7 @@ DATA_PSK_D=3
 
 $verbose=nil
 $ser_speed=38400
+$ser_dev=nil
 
 # Take a swag at some common serial defaults.
 if RUBY_PLATFORM=~/darwin/
@@ -79,7 +80,7 @@ if opts[:verbose_given]
   $verbose=true
 end
 
-# The user needs to specify a serial port dev (unless they're using
+# The user needs to specify a serial port device (unless they're using
 # the default).
 if opts[:dev_given]
   $ser_dev=opts[:dev]
